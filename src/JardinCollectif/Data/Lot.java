@@ -1,6 +1,6 @@
 package JardinCollectif.Data;
 
-
+import org.bson.Document;
 
 public class Lot {
 
@@ -12,6 +12,12 @@ public class Lot {
 		super();
 		this.nomLot = nomLot;
 		this.noMaxMembre = noMaxMembre;
+	}
+	public Lot(Document d) {
+		super();
+		this.idLot = d.getInteger("idLot");
+		this.nomLot = d.getString("nomLot");
+		this.noMaxMembre = d.getInteger("noMaxMembre");
 	}
 
 	public Integer getIdLot() {
@@ -36,6 +42,10 @@ public class Lot {
 
 	public void setNoMaxMembre(Integer noMaxMembre) {
 		this.noMaxMembre = noMaxMembre;
+	}
+
+	public Document toDocument() {
+		return new Document("idLot", idLot).append("nomLot", nomLot).append("noMaxMembre", noMaxMembre);
 	}
 
 }

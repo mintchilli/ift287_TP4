@@ -1,25 +1,32 @@
 package JardinCollectif.Data;
 
+import org.bson.Document;
 
 public class MembreLot {
 
-	private Integer idMembre;
+	private Integer noMembre;
 	private Integer idLot;
 	private Boolean validationAdmin;
 
 	public MembreLot(Integer noMembre, Integer idLot) {
 		super();
-		this.idMembre = noMembre;
+		this.noMembre = noMembre;
 		this.idLot = idLot;
 		this.validationAdmin = false;
 	}
 
-	public Integer getIdMembre() {
-		return idMembre;
+	public MembreLot(Document d) {
+		this.noMembre = d.getInteger("noMembre");
+		this.idLot = d.getInteger("idLot");
+		this.validationAdmin = d.getBoolean("validationAdmin");
 	}
 
-	public void setIdMembre(Integer idMembre) {
-		this.idMembre = idMembre;
+	public Integer getIdMembre() {
+		return noMembre;
+	}
+
+	public void setIdMembre(Integer noMembre) {
+		this.noMembre = noMembre;
 	}
 
 	public Integer getIdLot() {
@@ -36,6 +43,10 @@ public class MembreLot {
 
 	public void setValidationAdmin(Boolean validationAdmin) {
 		this.validationAdmin = validationAdmin;
+	}
+
+	public Document toDocument() {
+		return new Document("noMembre", noMembre).append("idLot", idLot).append("validationAdmin", validationAdmin);
 	}
 
 }

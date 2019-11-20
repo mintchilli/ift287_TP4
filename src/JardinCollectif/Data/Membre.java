@@ -1,5 +1,6 @@
 package JardinCollectif.Data;
 
+import org.bson.Document;
 
 public class Membre {
 
@@ -8,8 +9,7 @@ public class Membre {
 	private String prenom;
 	private String motDePasse;
 	private Boolean estAdmin;
-	
-	
+
 	public Membre(String prenom, String nom, String motDePasse, Integer noMembre) {
 		this.prenom = prenom;
 		this.nom = nom;
@@ -17,37 +17,58 @@ public class Membre {
 		this.noMembre = noMembre;
 		this.estAdmin = false;
 	}
-	
+
+	public Membre(Document d) {
+		this.prenom = d.getString("prenom");
+		this.nom = d.getString("nom");
+		this.motDePasse = d.getString("motDePasse");
+		this.noMembre = d.getInteger("noMembre");
+		this.estAdmin = d.getBoolean("estAdmin");
+	}
+
 	public Integer getId() {
 		return noMembre;
 	}
+
 	public void setId(Integer id) {
 		this.noMembre = id;
 	}
+
 	public String getNom() {
 		return nom;
 	}
+
 	public void setNom(String nom) {
 		this.nom = nom;
 	}
+
 	public String getPrenom() {
 		return prenom;
 	}
+
 	public void setPrenom(String prenom) {
 		this.prenom = prenom;
 	}
+
 	public String getPassword() {
 		return motDePasse;
 	}
+
 	public void setPassword(String password) {
 		this.motDePasse = password;
 	}
+
 	public Boolean getIsAdmin() {
 		return estAdmin;
 	}
+
 	public void setIsAdmin(Boolean isAdmin) {
 		this.estAdmin = isAdmin;
 	}
 
+	public Document toDocument() {
+		return new Document("noMembre", noMembre).append("prenom", prenom).append("nom", nom)
+				.append("motDePasse", motDePasse).append("estAdmin", estAdmin);
+	}
 
 }

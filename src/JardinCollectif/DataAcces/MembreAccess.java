@@ -2,7 +2,13 @@ package JardinCollectif.DataAcces;
 
 import java.util.ArrayList;
 import java.util.List;
-import javax.persistence.Query;
+
+import org.bson.Document;
+
+import com.mongodb.client.MongoCursor;
+
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.set;
 import JardinCollectif.Data.Membre;
 import JardinCollectif.Data.MembreLot;
 
@@ -16,10 +22,9 @@ public class MembreAccess {
 
 	public boolean inscrireMembre(String prenom, String nom, String motDePasse, int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
+
 			Membre m = new Membre(prenom, nom, motDePasse, noMembre);
-			conn.getConnection().persist(m);
+			conn.getConnection().getCollection("Membre").insertOne(m.toDocument());
 			return true;
 
 		} catch (Exception e) {
@@ -31,10 +36,7 @@ public class MembreAccess {
 
 	public boolean supprimerMembre(int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery("DELETE FROM Membre m WHERE m.noMembre = :noMembre");
-			query.setParameter("noMembre", noMembre).executeUpdate();
+			conn.getConnection().getCollection("Membre").deleteOne(eq("noMembre", noMembre));
 
 			return true;
 
@@ -47,10 +49,7 @@ public class MembreAccess {
 
 	public boolean makeAdmin(int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery("UPDATE Membre SET estAdmin = 1 WHERE noMembre = :noMembre");
-			query.setParameter("noMembre", noMembre).executeUpdate();
+			conn.getConnection().getCollection("Membre").updateOne(eq("noMembre", noMembre), set("estAdmin", true));
 
 			return true;
 
@@ -63,20 +62,17 @@ public class MembreAccess {
 
 	public ArrayList<Integer> getMembreLots(int noMembre) {
 		ArrayList<Integer> ret = new ArrayList<Integer>();
+		MongoCursor<Document> cursor = conn.getConnection().getCollection("MembreLot").find(eq("noMembre", noMembre))
+				.iterator();
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery("SELECT idlot FROM MembreLot WHERE noMembre = :noMembre");
-			List<MembreLot> membrelots = query.setParameter("noMembre", noMembre).getResultList();
-
-			for (MembreLot m : membrelots) {
-				ret.add(m.getIdLot());
+			while (cursor.hasNext()) {
+				MembreLot ml = new MembreLot(cursor.next());
+				ret.add(ml.getIdLot());
 			}
-
+			cursor.close();
 			return ret;
 
 		} catch (Exception e) {
-			conn.rollback();
 			e.printStackTrace();
 			return ret;
 		}
@@ -85,9 +81,7 @@ public class MembreAccess {
 
 	public int getMembreCount(int idLot) {
 		try {
-
-			Query query = conn.getConnection().createQuery("SELECT count(m) FROM MembreLot m WHERE idLot = :idLot");
-			return Math.toIntExact((long) query.setParameter("idLot", idLot).getSingleResult());
+			return (int) conn.getConnection().getCollection("MembreLot").countDocuments(eq("idLot", idLot));
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -97,9 +91,12 @@ public class MembreAccess {
 
 	public ArrayList<String> getMembreList() {
 		try {
+			List<Membre> membres = new ArrayList<Membre>();
+			MongoCursor<Document> cursor = conn.getConnection().getCollection("Membre").find().iterator();
+			while (cursor.hasNext()) {
+				membres.add(new Membre(cursor.next()));
 
-			Query query = conn.getConnection().createQuery("SELECT m FROM Membre m");
-			List<Membre> membres = query.getResultList();
+			}
 
 			ArrayList<String> ret = new ArrayList<String>();
 
@@ -115,7 +112,7 @@ public class MembreAccess {
 					data += "non";
 				ret.add(data);
 			}
-
+			cursor.close();
 			return ret;
 
 		} catch (Exception e) {
@@ -126,14 +123,11 @@ public class MembreAccess {
 
 	public String getMembre(int noMembre) {
 		try {
-
-			Query query = conn.getConnection()
-					.createQuery("SELECT m FROM Membre m WHERE noMembre = :noMembre");
-			Membre membre = (Membre) query.setParameter("noMembre", noMembre).getSingleResult();
+			Membre membre = new Membre(conn.getConnection().getCollection("Membre").find(eq("noMembre", noMembre)).first());
 
 			String data = "";
 
-			data = "Pr�nom : ";
+			data = "Prenom : ";
 			data += membre.getPrenom();
 			data += ", Nom : ";
 			data += membre.getNom();

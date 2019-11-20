@@ -1,10 +1,14 @@
 package JardinCollectif.DataAcces;
 
+import static com.mongodb.client.model.Filters.*;
+import static com.mongodb.client.model.Updates.set;
+
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.EntityManager;
-import javax.persistence.Query;
+import org.bson.Document;
+
+import com.mongodb.client.MongoCursor;
 
 import JardinCollectif.Data.Lot;
 import JardinCollectif.Data.MembreLot;
@@ -19,10 +23,8 @@ public class LotAccess {
 
 	public boolean ajouterLot(String nomLot, int noMaxMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
 			Lot l = new Lot(nomLot, noMaxMembre);
-			conn.getConnection().persist(l);
+			conn.getConnection().getCollection("Lot").insertOne(l.toDocument());
 
 			return true;
 
@@ -35,10 +37,8 @@ public class LotAccess {
 
 	public boolean rejoindreLot(int idLot, int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
 			MembreLot ml = new MembreLot(noMembre, idLot);
-			conn.getConnection().persist(ml);
+			conn.getConnection().getCollection("Lot").insertOne(ml.toDocument());
 
 			return true;
 
@@ -51,18 +51,14 @@ public class LotAccess {
 
 	public int getLotid(String nomLot) {
 		try {
-			EntityManager newEm = conn.getEmf().createEntityManager();
-			if (!newEm.getTransaction().isActive())
-				newEm.getTransaction().begin();
-			Query query = newEm.createQuery("SELECT idLot FROM Lot WHERE nomLot = :nomLot");
+			Lot lot = new Lot(conn.getConnection().getCollection("Lot").find(eq("nomLot", nomLot)).first());
 
-			Integer idLot = (Integer) query.setParameter("nomLot", nomLot).getSingleResult();
+			Integer idLot = lot.getIdLot();
 
 			if (idLot != null) {
-				newEm.close();
 				return idLot;
 			}
-				
+
 			return -1;
 
 		} catch (Exception e) {
@@ -74,12 +70,7 @@ public class LotAccess {
 
 	public boolean accepterDemande(int idLot, int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery(
-					"UPDATE MembreLot SET validationAdmin = 1 WHERE idMembre = :noMembre AND idLot = :idLot");
-			query.setParameter("noMembre", noMembre);
-			query.setParameter("idLot", idLot).executeUpdate();
+			conn.getConnection().getCollection("MembreLot").updateOne(eq("noMembre", noMembre), set("validationAdmin", true));
 
 			return true;
 
@@ -92,13 +83,7 @@ public class LotAccess {
 
 	public boolean refuserDemande(int idLot, int noMembre) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection()
-					.createQuery("DELETE FROM MembreLot WHERE idMembre = :noMembre AND idLot = :idLot");
-			query.setParameter("noMembre", noMembre);
-			query.setParameter("idLot", idLot).executeUpdate();
-
+			conn.getConnection().getCollection("MembreLot").deleteOne(and(eq("noMembre", noMembre),eq("idLot", idLot)));
 			return true;
 
 		} catch (Exception e) {
@@ -110,9 +95,8 @@ public class LotAccess {
 
 	public int getMembreMax(String nomLot) {
 		try {
-
-			Query query = conn.getConnection().createQuery("SELECT noMaxMembre FROM Lot WHERE nomLot = :nomLot");
-			Integer max = (Integer) query.setParameter("nomLot", nomLot).getSingleResult();
+			Lot l = new Lot(conn.getConnection().getCollection("Lot").find(eq("nomLot", nomLot)).first());
+			Integer max = l.getNoMaxMembre();
 
 			if (max != null) {
 				return max;
@@ -127,14 +111,8 @@ public class LotAccess {
 
 	public boolean supprimerLot(String nomLot) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery("DELETE FROM MembreLot WHERE idLot = :idLot");
-			query.setParameter("idLot", getLotid(nomLot)).executeUpdate();
-
-			Query query2 = conn.getConnection().createQuery("DELETE FROM Lot WHERE nomLot = :nomLot");
-			query2.setParameter("nomLot", nomLot).executeUpdate();
-
+			conn.getConnection().getCollection("MembreLot").deleteOne(eq("nomLot", nomLot));
+			conn.getConnection().getCollection("Lot").deleteOne(eq("nomLot", nomLot));
 			return true;
 
 		} catch (Exception e) {
@@ -147,9 +125,7 @@ public class LotAccess {
 	public int getPlantsForLot(String nomLot) {
 		try {
 
-			Query query = conn.getConnection().createQuery("SELECT COUNT(*) FROM PlanteLot WHERE idLot = :idLot", Integer.class);
-			return (int) query.setParameter("idLot", getLotid(nomLot)).getSingleResult();
-			
+			return (int) conn.getConnection().getCollection("MembreLot").countDocuments(eq("idLot", getLotid(nomLot)));
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -159,12 +135,16 @@ public class LotAccess {
 
 	public ArrayList<String> getLots() {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT l FROM Lot l");
-			List<Lot> lots = query.getResultList();
+
+			List<Lot> lots = new ArrayList<Lot>();
+			MongoCursor<Document> cursor = conn.getConnection().getCollection("Lot").find().iterator();
+			while (cursor.hasNext()) {
+				lots.add(new Lot(cursor.next()));
+
+			}
 
 			ArrayList<String> ret = new ArrayList<String>();
-			
+
 			for (Lot lot : lots) {
 				String data = "";
 				data += lot.getNomLot();
@@ -172,7 +152,6 @@ public class LotAccess {
 				data += lot.getNoMaxMembre();
 				ret.add(data);
 			}
-
 
 			return ret;
 
@@ -184,12 +163,21 @@ public class LotAccess {
 
 	public ArrayList<Integer> getMembrePourLot(int lotId) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT c FROM MembreLot c WHERE idLot = :idLot and validationAdmin = 1");
-			List<MembreLot> ml = query.setParameter("idLot", lotId).getResultList();
+			List<Lot> l = new ArrayList<Lot>();
+			MongoCursor<Document> cursor = conn.getConnection().getCollection("Lot").find(and(eq("idLot", lotId),eq("validationAdmin", true))).iterator();
+			while (cursor.hasNext()) {
+				l.add(new Lot(cursor.next()));
+
+			}
+			cursor = conn.getConnection().getCollection("MembreLot").find(and(eq("idLot", lotId),eq("validationAdmin", true))).iterator();
+			List<MembreLot> ml = new ArrayList<MembreLot>();
+			while (cursor.hasNext()) {
+				ml.add(new MembreLot(cursor.next()));
+
+			}
 
 			ArrayList<Integer> ret = new ArrayList<Integer>();
-			
+
 			for (MembreLot membreLots : ml) {
 				ret.add(membreLots.getIdMembre());
 			}
