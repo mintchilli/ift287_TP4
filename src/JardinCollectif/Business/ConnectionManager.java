@@ -35,8 +35,6 @@ public class ConnectionManager {
 	 */
 	public void executeTransaction(String transaction) throws SQLException {
 
-		boolean isCommiteableTransaction = false;
-
 		try {
 			System.out.print(transaction);
 			// Decoupage de la transaction en mots
@@ -55,7 +53,6 @@ public class ConnectionManager {
 						ma = new MembreAccess(cx);
 
 					ma.inscrireMembre(prenom, nom, motDePasse, noMembre);
-					isCommiteableTransaction = true;
 
 				} else if (command.equals("supprimerMembre")) {
 					int noMembre = readInt(tokenizer);
@@ -67,7 +64,6 @@ public class ConnectionManager {
 
 					if (!mm.isOnlyLotMember(noMembre)) {
 						ma.supprimerMembre(noMembre);
-						isCommiteableTransaction = true;
 					}
 
 					else {
@@ -81,7 +77,6 @@ public class ConnectionManager {
 						ma = new MembreAccess(cx);
 
 					ma.makeAdmin(noMembre);
-					isCommiteableTransaction = true;
 				} else if (command.equals("ajouterLot")) {
 					String nomLot = readString(tokenizer);
 					int noMaxMembre = readInt(tokenizer);
@@ -90,7 +85,6 @@ public class ConnectionManager {
 						la = new LotAccess(cx);
 
 					la.ajouterLot(nomLot, noMaxMembre);
-					isCommiteableTransaction = true;
 				} else if (command.equals("supprimerLot")) {
 					String nomLot = readString(tokenizer);
 
@@ -101,7 +95,6 @@ public class ConnectionManager {
 						jc.AfficherErreur("erreur, il y a encore des plantes non recoltees dans ce lot");
 					else {
 						la.supprimerLot(nomLot);
-						isCommiteableTransaction = true;
 					}
 
 				} else if (command.equals("rejoindreLot")) {
@@ -112,7 +105,6 @@ public class ConnectionManager {
 						la = new LotAccess(cx);
 
 					la.rejoindreLot(la.getLotid(nomLot), noMembre);
-					isCommiteableTransaction = true;
 				} else if (command.equals("accepterDemande")) {
 					String nomLot = readString(tokenizer);
 					int noMembre = readInt(tokenizer);
@@ -124,7 +116,6 @@ public class ConnectionManager {
 
 					if (lm.hasSpace(nomLot)) {
 						la.accepterDemande(la.getLotid(nomLot), noMembre);
-						isCommiteableTransaction = true;
 					} else {
 						jc.AfficherErreur("erreur, plus d'espace dans le lot");
 					}
@@ -137,7 +128,6 @@ public class ConnectionManager {
 						la = new LotAccess(cx);
 
 					la.refuserDemande(la.getLotid(nomLot), noMembre);
-					isCommiteableTransaction = true;
 				} else if (command.equals("ajouterPlante")) {
 					String nomPlante = readString(tokenizer);
 					int tempsDeCulture = readInt(tokenizer);
@@ -146,7 +136,6 @@ public class ConnectionManager {
 						pa = new PlanteAccess(cx);
 
 					pa.ajouterPlante(nomPlante, tempsDeCulture);
-					isCommiteableTransaction = true;
 					
 				} else if (command.equals("retirerPlante")) {
 					String nomPlante = readString(tokenizer);
@@ -155,7 +144,6 @@ public class ConnectionManager {
 						pa = new PlanteAccess(cx);
 
 					pa.retirerPlante(nomPlante);
-					isCommiteableTransaction = true;
 					
 				} else if (command.equals("planterPlante")) {
 					String nomPlante = readString(tokenizer);
@@ -186,7 +174,6 @@ public class ConnectionManager {
 							&& la.getMembrePourLot(idLot).contains(noMembre))
 					{
 						pa.planterPlante(idLot, idPlante, datePlantation, nbExemplaires, dateDeRecoltePrevu);
-						isCommiteableTransaction = true;
 					}
 				} else if (command.equals("recolterPlante")) {
 					String nomPlante = readString(tokenizer);
@@ -212,7 +199,6 @@ public class ConnectionManager {
 							&& la.getMembrePourLot(la.getLotid(nomLot)).contains(noMembre))
 					{
 						pa.recolterPlante(idPlante, idLot);
-						isCommiteableTransaction = true;
 					}
 				} else if (command.equals("afficherMembres")) {
 					MembreManager mm = new MembreManager(cx);
@@ -236,8 +222,6 @@ public class ConnectionManager {
 				}
 			}
 
-			if (isCommiteableTransaction)
-				cx.commit();
 		} catch (Exception e) {
 			jc.AfficherErreur(e.toString());
 			// Ce rollback est ici seulement pour vous aider et éviter des problèmes lors
@@ -245,7 +229,6 @@ public class ConnectionManager {
 			// automatique. En théorie, il ne sert à rien et ne devrait pas apparaître
 			// ici dans un programme
 			// fini et fonctionnel sans bogues.
-			cx.rollback();
 		}
 
 	}

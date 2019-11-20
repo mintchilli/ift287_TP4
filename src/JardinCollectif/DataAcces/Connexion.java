@@ -3,9 +3,10 @@ package JardinCollectif.DataAcces;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
+import com.mongodb.Mongo;
+import com.mongodb.MongoClient;
+import com.mongodb.MongoClientURI;
+import com.mongodb.client.MongoDatabase;
 
 import JardinCollectif.IFT287Exception;
 
@@ -34,8 +35,8 @@ import JardinCollectif.IFT287Exception;
  */
 public class Connexion
 {
-	 private EntityManager em;
-	 private EntityManagerFactory emf;
+	 private MongoClient mc;
+
 
     /**
      * Ouverture d'une connexion en mode autocommit false et sérialisable (si
@@ -55,23 +56,18 @@ public class Connexion
             
             if (serveur.equals("local"))
             {
-            	emf = Persistence.createEntityManagerFactory(bd);
+            	mc = new MongoClient();
             }
             else if (serveur.equals("dinf"))
             {
-            	Map<String, String> properties = new HashMap<String, String>();
-	        	  properties.put("javax.persistence.jdbc.user", user);
-	        	  properties.put("javax.persistence.jdbc.password", pass);
-	        	emf = Persistence.createEntityManagerFactory("objectdb://bd-info2.dinf.usherbrooke.ca:6136/"+user+"/" + bd, properties);
+            	MongoClientURI uri = new MongoClientURI("mongodb://" + user + ":" + pass + "@bd-info2.dinf.usherbrooke.ca:6136/bd?options");
+            	mc = new MongoClient(uri);
             }
             else
             {
                 throw new IFT287Exception("Serveur inconnu");
             }
 
-
-
-	    	em = emf.createEntityManager();
 	        
 	        System.out.println("Ouverture de la connexion :\n"
 	                + "Connecte sur la BD ObjectDB "
@@ -90,40 +86,19 @@ public class Connexion
      */
     public void fermer()
     {
-        em.close();
-        emf.close();
         System.out.println("Connexion fermee ");
     }
 
-    /**
-     * Commit
-     */
-    public void commit()
-    {
-    	em.getTransaction().commit();
-    }
-
 
     /**
-     * Rollback
+     * Retourne la Connection mongoDB
      */
-    public void rollback() 
+    public MongoDatabase getConnection()
     {
-    	em.getTransaction().rollback();
-    }
+    	return mc.getDatabase("db");
 
-    /**
-     * Retourne la Connection JDBC
-     */
-    public EntityManager getConnection()
-    {
-    	return em;
     }
     
-    public EntityManagerFactory getEmf()
-    {
-    	return emf;
-    }
 
 
 
