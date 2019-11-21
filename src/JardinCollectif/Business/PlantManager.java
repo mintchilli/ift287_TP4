@@ -19,7 +19,7 @@ public class PlantManager {
 	public ArrayList<String> getPlantesParLot(String nomLot) {
 		LotAccess la = new LotAccess(conn);
 		PlanteAccess pa = new PlanteAccess(conn);
-		int idLot = la.getLotid(nomLot);
+		String idLot = la.getLotid(nomLot);
 		
 		return pa.getPlantesPourLot(idLot);
 	}

@@ -57,7 +57,7 @@ public class PlanteAccess {
 		}
 	}
 	
-	public boolean planterPlante(int idLot, int idPlante, Date datePlantation, int nbExemplaires, Date dateDeRecoltePrevu) {
+	public boolean planterPlante(String idLot, int idPlante, Date datePlantation, int nbExemplaires, Date dateDeRecoltePrevu) {
 		try {
 			if (!conn.getConnection().getTransaction().isActive())
 				conn.getConnection().getTransaction().begin();
@@ -72,7 +72,7 @@ public class PlanteAccess {
 		}
 	}
 	
-	public boolean recolterPlante(int idPlante, int idLot) {
+	public boolean recolterPlante(int idPlante, String idLot) {
 		try {
 			if (!conn.getConnection().getTransaction().isActive())
 				conn.getConnection().getTransaction().begin();
@@ -172,7 +172,7 @@ public class PlanteAccess {
 		return null;
 	}
 	
-	public Date getDateDeRecoltePrevu(int idLot, int idPlante) {
+	public Date getDateDeRecoltePrevu(String idLot, int idPlante) {
 		try {
 			
 			Query query = conn.getConnection().createQuery("SELECT pl.dateDeRecoltePrevu FROM PlanteLot pl WHERE pl.idLot = :idLot and pl.idPlante = :idPlante");
@@ -215,7 +215,7 @@ public class PlanteAccess {
 		return null;
 	}
 	
-	public ArrayList<String> getPlantesPourLot(int idLot) {
+	public ArrayList<String> getPlantesPourLot(String idLot) {
 		try {
 			
 			Query query = conn.getConnection().createQuery("SELECT pl FROM PlanteLot pl WHERE pl.idLot = :idLot");

@@ -35,10 +35,10 @@ public class LotAccess {
 
 	}
 
-	public boolean rejoindreLot(int idLot, int noMembre) {
+	public boolean rejoindreLot(String idLot, int noMembre) {
 		try {
 			MembreLot ml = new MembreLot(noMembre, idLot);
-			conn.getConnection().getCollection("Lot").insertOne(ml.toDocument());
+			conn.getConnection().getCollection("MembreLot").insertOne(ml.toDocument());
 
 			return true;
 
@@ -49,28 +49,29 @@ public class LotAccess {
 
 	}
 
-	public int getLotid(String nomLot) {
+	public String getLotid(String nomLot) {
 		try {
 			Lot lot = new Lot(conn.getConnection().getCollection("Lot").find(eq("nomLot", nomLot)).first());
 
-			Integer idLot = lot.getIdLot();
+			String idLot = lot.getIdLot();
 
 			if (idLot != null) {
 				return idLot;
 			}
 
-			return -1;
+			return "";
 
 		} catch (Exception e) {
 			e.printStackTrace();
-			return -1;
+			return "";
 		}
 
 	}
 
-	public boolean accepterDemande(int idLot, int noMembre) {
+	public boolean accepterDemande(String idLot, int noMembre) {
 		try {
-			conn.getConnection().getCollection("MembreLot").updateOne(eq("noMembre", noMembre), set("validationAdmin", true));
+			conn.getConnection().getCollection("MembreLot").updateOne(eq("noMembre", noMembre),
+					set("validationAdmin", true));
 
 			return true;
 
@@ -81,9 +82,10 @@ public class LotAccess {
 
 	}
 
-	public boolean refuserDemande(int idLot, int noMembre) {
+	public boolean refuserDemande(String idLot, int noMembre) {
 		try {
-			conn.getConnection().getCollection("MembreLot").deleteOne(and(eq("noMembre", noMembre),eq("idLot", idLot)));
+			conn.getConnection().getCollection("MembreLot")
+					.deleteOne(and(eq("noMembre", noMembre), eq("idLot", idLot)));
 			return true;
 
 		} catch (Exception e) {
@@ -161,16 +163,11 @@ public class LotAccess {
 		}
 	}
 
-	public ArrayList<Integer> getMembrePourLot(int lotId) {
+	public ArrayList<Integer> getMembrePourLot(String lotId) {
 		try {
-			List<Lot> l = new ArrayList<Lot>();
-			MongoCursor<Document> cursor = conn.getConnection().getCollection("Lot").find(and(eq("idLot", lotId),eq("validationAdmin", true))).iterator();
-			while (cursor.hasNext()) {
-				l.add(new Lot(cursor.next()));
-
-			}
-			cursor = conn.getConnection().getCollection("MembreLot").find(and(eq("idLot", lotId),eq("validationAdmin", true))).iterator();
 			List<MembreLot> ml = new ArrayList<MembreLot>();
+			MongoCursor<Document> cursor = conn.getConnection().getCollection("MembreLot")
+					.find(and(eq("idLot", lotId), eq("validationAdmin", true))).iterator();
 			while (cursor.hasNext()) {
 				ml.add(new MembreLot(cursor.next()));
 

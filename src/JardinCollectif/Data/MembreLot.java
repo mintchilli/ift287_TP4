@@ -5,10 +5,10 @@ import org.bson.Document;
 public class MembreLot {
 
 	private Integer noMembre;
-	private Integer idLot;
+	private String idLot;
 	private Boolean validationAdmin;
 
-	public MembreLot(Integer noMembre, Integer idLot) {
+	public MembreLot(Integer noMembre, String idLot) {
 		super();
 		this.noMembre = noMembre;
 		this.idLot = idLot;
@@ -17,7 +17,7 @@ public class MembreLot {
 
 	public MembreLot(Document d) {
 		this.noMembre = d.getInteger("noMembre");
-		this.idLot = d.getInteger("idLot");
+		this.idLot = d.getString("idLot");
 		this.validationAdmin = d.getBoolean("validationAdmin");
 	}
 
@@ -29,11 +29,11 @@ public class MembreLot {
 		this.noMembre = noMembre;
 	}
 
-	public Integer getIdLot() {
+	public String getIdLot() {
 		return idLot;
 	}
 
-	public void setNomLot(Integer idLot) {
+	public void setNomLot(String idLot) {
 		this.idLot = idLot;
 	}
 

@@ -17,10 +17,10 @@ public class MembreManager {
 		//get la liste des lot ou le membre est
 		
 		MembreAccess ma = new MembreAccess(conn);
-		ArrayList<Integer> lst = ma.getMembreLots(noMembre);
+		ArrayList<String> lst = ma.getMembreLots(noMembre);
 		
 		//verifie pour chaque lot si le membre est le seul
-		for (int idLot : lst) {
+		for (String idLot : lst) {
 			if(ma.getMembreCount(idLot) <= 1)
 				return true;
 		}

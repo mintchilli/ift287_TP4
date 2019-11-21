@@ -55,7 +55,7 @@ public class LotManager {
 		
 		for (String lot : lots) {
 			
-			int lotId = la.getLotid(lot.split(",")[0]);
+			String lotId = la.getLotid(lot.split(",")[0]);
 
 			
 			ArrayList<Integer> idMembre = la.getMembrePourLot(lotId);

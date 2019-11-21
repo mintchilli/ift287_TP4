@@ -60,8 +60,8 @@ public class MembreAccess {
 
 	}
 
-	public ArrayList<Integer> getMembreLots(int noMembre) {
-		ArrayList<Integer> ret = new ArrayList<Integer>();
+	public ArrayList<String> getMembreLots(int noMembre) {
+		ArrayList<String> ret = new ArrayList<String>();
 		MongoCursor<Document> cursor = conn.getConnection().getCollection("MembreLot").find(eq("noMembre", noMembre))
 				.iterator();
 		try {
@@ -79,9 +79,9 @@ public class MembreAccess {
 
 	}
 
-	public int getMembreCount(int idLot) {
+	public int getMembreCount(String string) {
 		try {
-			return (int) conn.getConnection().getCollection("MembreLot").countDocuments(eq("idLot", idLot));
+			return (int) conn.getConnection().getCollection("MembreLot").countDocuments(eq("_id", string));
 
 		} catch (Exception e) {
 			e.printStackTrace();
