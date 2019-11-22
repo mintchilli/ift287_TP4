@@ -162,7 +162,7 @@ public class ConnectionManager {
 						la = new LotAccess(cx);
 
 					String idLot = la.getLotid(nomLot);
-					int idPlante = pa.getPlanteId(nomPlante);
+					String idPlante = pa.getPlanteId(nomPlante);
 					int tempsCulture = pa.getTempsCulture(nomPlante);
 
 					Calendar calendar = Calendar.getInstance();
@@ -170,7 +170,7 @@ public class ConnectionManager {
 					calendar.add(Calendar.DATE, tempsCulture);
 					Date dateDeRecoltePrevu = new Date(calendar.getTimeInMillis());
 
-					if (nbExemplaires > 0 && idLot != "" && idPlante != -1
+					if (nbExemplaires > 0 && idLot != "" && idPlante != "-1"
 							&& la.getMembrePourLot(idLot).contains(noMembre))
 					{
 						pa.planterPlante(idLot, idPlante, datePlantation, nbExemplaires, dateDeRecoltePrevu);
@@ -186,7 +186,7 @@ public class ConnectionManager {
 					if (la == null)
 						la = new LotAccess(cx);
 
-					int idPlante = pa.getPlanteId(nomPlante);
+					String idPlante = pa.getPlanteId(nomPlante);
 					String idLot = la.getLotid(nomLot);
 					
 					Date dateDeRevoltePrevu = pa.getDateDeRecoltePrevu(idLot, idPlante);
@@ -195,7 +195,7 @@ public class ConnectionManager {
 					boolean pretPourRecolte = dateDeRevoltePrevu.before(currentDate)
 							|| dateDeRevoltePrevu.equals(currentDate);
 
-					if (pretPourRecolte && idPlante != -1 && idLot != ""
+					if (pretPourRecolte && idPlante != "-1" && idLot != ""
 							&& la.getMembrePourLot(la.getLotid(nomLot)).contains(noMembre))
 					{
 						pa.recolterPlante(idPlante, idLot);

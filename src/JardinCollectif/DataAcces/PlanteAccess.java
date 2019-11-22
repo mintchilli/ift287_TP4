@@ -8,11 +8,16 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.persistence.Query;
+import org.bson.Document;
+
+import com.mongodb.client.MongoCursor;
 
 import JardinCollectif.Data.Membre;
 import JardinCollectif.Data.Plante;
 import JardinCollectif.Data.PlanteLot;
+
+import static com.mongodb.client.model.Filters.eq;
+import static com.mongodb.client.model.Filters.and;
 
 import java.sql.Date;
 
@@ -26,10 +31,8 @@ public class PlanteAccess {
 	
 	public boolean ajouterPlante(String nomPlante, int tempsDeCulture) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
 			Plante p = new Plante(nomPlante, tempsDeCulture);
-			conn.getConnection().persist(p);
+			conn.getConnection().getCollection("Plante").insertOne(p.toDocument());
 			return true;
 			
 		} catch (Exception e) {
@@ -40,14 +43,10 @@ public class PlanteAccess {
 	
 	public boolean retirerPlante(String nomPlante) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			
 			if (getPlanteNbrTotal(getPlanteId(nomPlante)) > 0)
 				return false;
 			
-			Query query = conn.getConnection().createQuery("DELETE FROM Plante p WHERE p.nomPlante = :nomPlante");
-			query.setParameter("nomPlante", nomPlante).executeUpdate();
+			conn.getConnection().getCollection("Plante").deleteOne(eq("nomPlante", nomPlante));
 
 			return true;
 
@@ -57,12 +56,10 @@ public class PlanteAccess {
 		}
 	}
 	
-	public boolean planterPlante(String idLot, int idPlante, Date datePlantation, int nbExemplaires, Date dateDeRecoltePrevu) {
+	public boolean planterPlante(String idLot, String idPlante, Date datePlantation, int nbExemplaires, Date dateDeRecoltePrevu) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
 			PlanteLot pl = new PlanteLot(idLot, idPlante, datePlantation, dateDeRecoltePrevu, nbExemplaires);
-			conn.getConnection().persist(pl);
+			conn.getConnection().getCollection("PlanteLot").insertOne(pl.toDocument());
 
 			return true;
 
@@ -72,21 +69,10 @@ public class PlanteAccess {
 		}
 	}
 	
-	public boolean recolterPlante(int idPlante, String idLot) {
+	public boolean recolterPlante(String idPlante, String idLot) {
 		try {
-			if (!conn.getConnection().getTransaction().isActive())
-				conn.getConnection().getTransaction().begin();
-			Query query = conn.getConnection().createQuery("select pl from PlanteLot pl where pl.idLot = :idLot and pl.idPlante = :idPlante");
-			PlanteLot pl = (PlanteLot) query
-				.setParameter("idLot", idLot)
-				.setParameter("idPlante", idPlante)
-				.getSingleResult();
-			
-			Query query2 = conn.getConnection().createQuery("delete from PlanteLot pl where pl.idLot = :idLot and pl.idPlante = :idPlante");
-			query2
-				.setParameter("idLot", idLot)
-				.setParameter("idPlante", idPlante)
-				.executeUpdate();
+			conn.getConnection().getCollection("PlanteLot")
+				.deleteOne(and(eq("idLot", idLot), eq("idPlante", idPlante)));
 			
 			return true;
 
@@ -96,28 +82,26 @@ public class PlanteAccess {
 		}
 	}
 	
-	public int getPlanteId(String nomPlante) {
+	public String getPlanteId(String nomPlante) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT p.idPlante FROM Plante p WHERE p.nomPlante = :nomPlante");
-			return (int) query
-				.setParameter("nomPlante", nomPlante)
-				.getSingleResult();
+			return conn.getConnection().getCollection("Plante")
+			.find(eq("nomPlante", nomPlante))
+			.first()
+			.getString("idPlante");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		return -1;
+		return "-1";
 	}
 	
-	public String getPlanteNom(int idPlante) {
+	public String getPlanteNom(String idPlante) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT p.nomPlante FROM Plante p WHERE p.idPlante = :idPlante");
-			return (String) query
-				.setParameter("idPlante", idPlante)
-				.getSingleResult();
+			return conn.getConnection().getCollection("Plante")
+					.find(eq("idPlante", idPlante))
+					.first()
+					.getString("nomPlante");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -126,29 +110,35 @@ public class PlanteAccess {
 		return null;
 	}
 	
-	public int getPlanteNbrTotal(int idPlante) {
+	public int getPlanteNbrTotal(String idPlante) {
 		try {
+			int total = 0;
+			MongoCursor<Document> cursor = conn.getConnection()
+					.getCollection("PlanteLot")
+					.find(eq("idPlante", idPlante))
+					.iterator();
 			
-			Query query = conn.getConnection().createQuery("SELECT SUM(pl.nbExemplaires) FROM PlanteLot pl WHERE pl.idPlante = :idPlante");
-			return Math.toIntExact( (long) query
-				.setParameter("idPlante", idPlante)
-				.getSingleResult());
+			while (cursor.hasNext())
+			{
+				total += cursor.next().getInteger("nbExemplaires");
+			}
+			
+			return total;
 
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
 		
-		return 0;
+		return -1;
 	}
 	
 	public int getTempsCulture(String nomPlante) {
 		try {
+			return conn.getConnection().getCollection("Plante")
+					.find(eq("nomPlante", nomPlante))
+					.first()
+					.getInteger("tempsCulture");
 			
-			Query query = conn.getConnection().createQuery("SELECT p.tempsCulture FROM Plante p WHERE p.nomPlante = :nomPlante");
-			return (int) query
-				.setParameter("nomPlante", nomPlante)
-				.getSingleResult();
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -156,14 +146,12 @@ public class PlanteAccess {
 		return -1;
 	}
 	
-	public Date getDatePlantation(int idLot, int idPlante) {
+	public Date getDatePlantation(String idLot, String idPlante) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT pl.datePlantation FROM PlanteLot pl WHERE pl.idLot = :idLot and pl.idPlante = :idPlante");
-			return (Date) query
-				.setParameter("idLot", idLot)
-				.setParameter("idPlante", idPlante)
-				.getSingleResult();
+			return (Date) conn.getConnection().getCollection("PlanteLot")
+				.find(and(eq("idLot", idLot), eq("idPlante", idPlante)))
+				.first()
+				.getDate("datePlantation");
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -172,14 +160,12 @@ public class PlanteAccess {
 		return null;
 	}
 	
-	public Date getDateDeRecoltePrevu(String idLot, int idPlante) {
+	public Date getDateDeRecoltePrevu(String idLot, String idPlante) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT pl.dateDeRecoltePrevu FROM PlanteLot pl WHERE pl.idLot = :idLot and pl.idPlante = :idPlante");
-			return (Date) query
-				.setParameter("idLot", idLot)
-				.setParameter("idPlante", idPlante)
-				.getSingleResult();
+			return (Date) conn.getConnection().getCollection("PlanteLot")
+					.find(and(eq("idLot", idLot), eq("idPlante", idPlante)))
+					.first()
+					.getDate("dateDeRecoltePrevu");
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -190,19 +176,21 @@ public class PlanteAccess {
 	
 	public ArrayList<String> getPlantesList() {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT p FROM Plante p");
-			List<Plante> pList = (List<Plante>) query.getResultList();
+			MongoCursor<Document> cursor = conn.getConnection()
+					.getCollection("Plante")
+					.find()
+					.iterator();
 			
 			ArrayList<String> ret = new ArrayList<String>();
 			
-			for (Plante plante : pList) {
-				int idPlante = plante.getIdPlante();
+			while (cursor.hasNext())
+			{
+				Plante p = new Plante(cursor.next());
 				
 				String data = "Plante : ";
-				data += getPlanteNom(idPlante);
+				data += p.getNomPlante();
 				data += ", Nombre d'exemplaires : ";
-				data += Integer.toString(getPlanteNbrTotal(idPlante));
+				data += Integer.toString(getPlanteNbrTotal(p.getIdPlante()));
 				
 				ret.add(data);
 			}
@@ -217,20 +205,20 @@ public class PlanteAccess {
 	
 	public ArrayList<String> getPlantesPourLot(String idLot) {
 		try {
-			
-			Query query = conn.getConnection().createQuery("SELECT pl FROM PlanteLot pl WHERE pl.idLot = :idLot");
-			List<PlanteLot> plList = (List<PlanteLot>) query
-					.setParameter("idLot", idLot)
-					.getResultList();
+			MongoCursor<Document> cursor = conn.getConnection().getCollection("PlanteLot")
+				.find(eq("idLot", idLot))
+				.iterator();
 			
 			ArrayList<String> ret = new ArrayList<String>();
 			
-			for (PlanteLot pl : plList) {
-				int idPlante = pl.getIdPlante();
+			while (cursor.hasNext())
+			{
+				PlanteLot pl = new PlanteLot(cursor.next());
+				
 				DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 				
 				String data = "Plante : ";
-				data += getPlanteNom(idPlante);
+				data += getPlanteNom(pl.getIdPlante());
 				data += ", Date de plantation : ";
 				data += df.format(pl.getDatePlantation());
 				data += ", Date de recolte prevu : ";

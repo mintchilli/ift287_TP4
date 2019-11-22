@@ -1,8 +1,12 @@
 package JardinCollectif.Data;
 
+import java.sql.Date;
+
+import org.bson.Document;
+
 public class Plante {
 
-	private Integer idPlante;
+	private String idPlante;
 	private String nomPlante;
 	private int tempsCulture;
 
@@ -11,12 +15,18 @@ public class Plante {
 		this.nomPlante = nomPlante;
 		this.tempsCulture = tempsCulture;
 	}
+	
+	public Plante(Document d) {
+		this.idPlante = d.getString("idPlante");
+		this.nomPlante = d.getString("nomPlante");
+		this.tempsCulture = d.getInteger("tempsCulture");
+	}
 
-	public Integer getIdPlante() {
+	public String getIdPlante() {
 		return idPlante;
 	}
 
-	public void setIdPlante(Integer noPlante) {
+	public void setIdPlante(String noPlante) {
 		this.idPlante = noPlante;
 	}
 
@@ -34,5 +44,10 @@ public class Plante {
 
 	public void setTempsCulture(int tempsCulture) {
 		this.tempsCulture = tempsCulture;
+	}
+	
+	public Document toDocument() {
+		return new Document("idPlante", idPlante).append("nomPlante", nomPlante)
+				.append("tempsCulture", tempsCulture);
 	}
 }
