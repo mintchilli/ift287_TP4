@@ -1,25 +1,22 @@
 package JardinCollectif.DataAcces;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Date;
 
 import org.bson.Document;
 
 import com.mongodb.client.MongoCursor;
 
+import JardinCollectif.Data.Lot;
 import JardinCollectif.Data.Membre;
 import JardinCollectif.Data.Plante;
 import JardinCollectif.Data.PlanteLot;
 
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.and;
-
-import java.sql.Date;
 
 public class PlanteAccess {
 
@@ -84,10 +81,9 @@ public class PlanteAccess {
 	
 	public String getPlanteId(String nomPlante) {
 		try {
-			return conn.getConnection().getCollection("Plante")
+			return new Plante(conn.getConnection().getCollection("Plante")
 			.find(eq("nomPlante", nomPlante))
-			.first()
-			.getString("idPlante");
+			.first()).getIdPlante();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -98,10 +94,9 @@ public class PlanteAccess {
 	
 	public String getPlanteNom(String idPlante) {
 		try {
-			return conn.getConnection().getCollection("Plante")
+			return new Plante(conn.getConnection().getCollection("Plante")
 					.find(eq("idPlante", idPlante))
-					.first()
-					.getString("nomPlante");
+					.first()).getNomPlante();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -134,10 +129,9 @@ public class PlanteAccess {
 	
 	public int getTempsCulture(String nomPlante) {
 		try {
-			return conn.getConnection().getCollection("Plante")
+			return new Plante(conn.getConnection().getCollection("Plante")
 					.find(eq("nomPlante", nomPlante))
-					.first()
-					.getInteger("tempsCulture");
+					.first()).getTempsCulture();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -148,10 +142,9 @@ public class PlanteAccess {
 	
 	public Date getDatePlantation(String idLot, String idPlante) {
 		try {
-			return (Date) conn.getConnection().getCollection("PlanteLot")
-				.find(and(eq("idLot", idLot), eq("idPlante", idPlante)))
-				.first()
-				.getDate("datePlantation");
+			return new PlanteLot(conn.getConnection().getCollection("PlanteLot")
+					.find(and(eq("idLot", idLot), eq("idPlante", idPlante)))
+					.first()).getDatePlantation();
 
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -162,10 +155,9 @@ public class PlanteAccess {
 	
 	public Date getDateDeRecoltePrevu(String idLot, String idPlante) {
 		try {
-			return (Date) conn.getConnection().getCollection("PlanteLot")
+			return new PlanteLot(conn.getConnection().getCollection("PlanteLot")
 					.find(and(eq("idLot", idLot), eq("idPlante", idPlante)))
-					.first()
-					.getDate("dateDeRecoltePrevu");
+					.first()).getDateDeRecoltePrevu();
 			
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -206,8 +198,8 @@ public class PlanteAccess {
 	public ArrayList<String> getPlantesPourLot(String idLot) {
 		try {
 			MongoCursor<Document> cursor = conn.getConnection().getCollection("PlanteLot")
-				.find(eq("idLot", idLot))
-				.iterator();
+					.find(eq("idLot", idLot))
+					.iterator();
 			
 			ArrayList<String> ret = new ArrayList<String>();
 			
@@ -218,7 +210,8 @@ public class PlanteAccess {
 				DateFormat df = new SimpleDateFormat("yyyy-MM-dd");
 				
 				String data = "Plante : ";
-				data += getPlanteNom(pl.getIdPlante());
+				
+				data += pl.getIdPlante().toString();
 				data += ", Date de plantation : ";
 				data += df.format(pl.getDatePlantation());
 				data += ", Date de recolte prevu : ";
@@ -231,6 +224,7 @@ public class PlanteAccess {
 
 		} catch (Exception e) {
 			e.printStackTrace();
+		} finally {
 		}
 		return null;
 	}

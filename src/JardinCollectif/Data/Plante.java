@@ -17,7 +17,7 @@ public class Plante {
 	}
 	
 	public Plante(Document d) {
-		this.idPlante = d.getString("idPlante");
+		this.idPlante = d.getObjectId("_id").toHexString();
 		this.nomPlante = d.getString("nomPlante");
 		this.tempsCulture = d.getInteger("tempsCulture");
 	}
@@ -47,7 +47,7 @@ public class Plante {
 	}
 	
 	public Document toDocument() {
-		return new Document("idPlante", idPlante).append("nomPlante", nomPlante)
+		return new Document("nomPlante", nomPlante)
 				.append("tempsCulture", tempsCulture);
 	}
 }

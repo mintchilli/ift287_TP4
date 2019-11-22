@@ -1,6 +1,5 @@
 package JardinCollectif.Business;
 
-import java.sql.Date;
 import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -8,6 +7,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
 import java.util.StringTokenizer;
+import java.util.Date;
 
 import JardinCollectif.IFT287Exception;
 import JardinCollectif.JardinCollectif;
@@ -260,7 +260,7 @@ public class ConnectionManager {
 		if (tokenizer.hasMoreElements()) {
 			String token = tokenizer.nextToken();
 			try {
-				return Date.valueOf(token);
+				return new Date(java.sql.Date.valueOf(token).getTime());
 			} catch (IllegalArgumentException e) {
 				throw new Exception("Date dans un format invalide - \"" + token + "\"");
 			}

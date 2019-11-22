@@ -1,6 +1,6 @@
 package JardinCollectif.Data;
 
-import java.sql.Date;
+import java.util.Date;
 
 import org.bson.Document;
 
